@@ -28,6 +28,8 @@ from .picture_viewer import PictureViewer
 from .tracking import timer
 from .playnext import PlayNextDialog
 
+from . import authentik
+
 log = LazyLogger(__name__)
 settings = xbmcaddon.Addon()
 
@@ -331,6 +333,8 @@ def play_file(play_info):
     elif result.get("Type") == "Photo":
         play_url = "%s/Items/%s/Images/Primary"
         play_url = play_url % (server, item_id)
+
+        play_url = authentik.pipe(play_url)
 
         plugin_path = translate_path(os.path.join(xbmcaddon.Addon().getAddonInfo('path')))
         action_menu = PictureViewer("PictureViewer.xml", plugin_path, "default", "720p")
@@ -894,6 +898,9 @@ def audio_subs_pref(url, list_item, media_source, item_id, audio_stream_index, s
         if select_subs_index in downloadable_streams:
             subtitle_url = "%s/Videos/%s/%s/Subtitles/%s/Stream.srt"
             subtitle_url = subtitle_url % (settings.getSetting('server_address'), item_id, source_id, select_subs_index)
+
+            subtitle_url = authentik.pipe(subtitle_url)
+
             log.debug("Streaming subtitles url: {0} {1}".format(select_subs_index, subtitle_url))
             list_item.setSubtitles([subtitle_url])
         else:
@@ -914,6 +921,9 @@ def audio_subs_pref(url, list_item, media_source, item_id, audio_stream_index, s
             if select_subs_index in downloadable_streams:
                 subtitle_url = "%s/Videos/%s/%s/Subtitles/%s/Stream.srt"
                 subtitle_url = subtitle_url % (settings.getSetting('server_address'), item_id, source_id, select_subs_index)
+
+                subtitle_url = authentik.pipe(subtitle_url)
+
                 log.debug("Streaming subtitles url: {0} {1}".format(select_subs_index, subtitle_url))
                 list_item.setSubtitles([subtitle_url])
             else:
@@ -968,7 +978,7 @@ def external_subs(media_source, list_item, item_id):
                 subtitle_file = download_external_sub(language, codec, url, title)
             else:
                 # If there is no language defined, we can go directly to the server
-                subtitle_file = url
+                subtitle_file = authentik.pipe(url)
 
             sub_name = '{} ( {} )'.format(language, codec)
 
@@ -1293,15 +1303,18 @@ def get_play_url(media_source, play_session_id, channel_id=None):
             }
             play_param_string = urlencode(play_params)
             playurl = '{}?{}'.format(url_root, play_param_string)
+
+            playurl = authentik.pipe(playurl)
+
         playback_type = "1"
 
     # check is file can be transcoded
     if can_transcode and playurl is None:
         item_id = media_source.get('Id')
         device_id = get_device_id()
-
-        user_details = load_user_details()
-        user_token = user_details.get('token')
+        
+        # user_details = load_user_details() # discouraged: https://gist.github.com/nielsvanvelzen/ea047d9028f676185832e51ffaf12a6f
+        # user_token = user_details.get('token') # also defeats the point of dual header if ApiKey is used lol
         bitrate = get_bitrate(settings.getSetting("force_max_stream_bitrate"))
         playback_max_width = settings.getSetting("playback_max_width")
         audio_codec = settings.getSetting("audio_codec")
@@ -1314,7 +1327,7 @@ def get_play_url(media_source, play_session_id, channel_id=None):
             "MediaSourceId": item_id,
             "DeviceId": device_id,
             "PlaySessionId": play_session_id,
-            "ApiKey": user_token,
+            # "ApiKey": user_token, 
             "SegmentContainer": "ts",
             "VideoCodec": "h264",
             "VideoBitrate": bitrate,
@@ -1337,6 +1350,8 @@ def get_play_url(media_source, play_session_id, channel_id=None):
             transcode_path = urlencode(transcode_params)
             playurl = '{}/Videos/{}/master.m3u8?{}'.format(
                 server, item_id, transcode_path)
+
+        playurl = authentik.pipe(playurl, transcode=True)
 
         playback_type = "2"
 

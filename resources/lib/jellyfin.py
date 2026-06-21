@@ -11,6 +11,8 @@ from kodi_six.utils import py2_decode
 from .utils import get_device_id, get_version, load_user_details
 from .lazylogger import LazyLogger
 
+from . import authentik
+
 log = LazyLogger(__name__)
 
 
@@ -27,7 +29,7 @@ class API:
         self.verify_cert = settings.getSetting('verify_cert') == 'true'
 
     def get(self, path):
-        if 'Authorization' not in self.headers or self.token not in self.headers:
+        if authentik.TOKEN_HEADER not in self.headers or (self.token and self.token not in self.headers.get(authentik.TOKEN_HEADER, '')):
             self.create_headers(True)
 
         # Fixes initial login where class is initialized before wizard completes
@@ -56,7 +58,7 @@ class API:
         return response_data
 
     def post(self, url, payload={}):
-        if 'Authorization' not in self.headers or self.token not in self.headers:
+        if authentik.TOKEN_HEADER not in self.headers or (self.token and self.token not in self.headers.get(authentik.TOKEN_HEADER, '')):
             self.create_headers(True)
 
         url = '{}{}'.format(self.server, url)
@@ -73,7 +75,7 @@ class API:
         return response_data
 
     def delete(self, url):
-        if 'Authorization' not in self.headers or self.token not in self.headers:
+        if authentik.TOKEN_HEADER not in self.headers or (self.token and self.token not in self.headers.get(authentik.TOKEN_HEADER, '')):
             self.create_headers(True)
 
         url = '{}{}'.format(self.server, url)
@@ -101,7 +103,7 @@ class API:
     def create_headers(self, force=False):
 
         # If the headers already exist with an auth token, return unless we're regenerating
-        if self.headers and 'Authorization' in self.headers.get('Authorization', '') and force is False:
+        if self.headers and authentik.TOKEN_HEADER in self.headers and force is False:
             return
 
         headers = {}
@@ -122,18 +124,20 @@ class API:
             version=version
         )
 
-        headers['Authorization'] = authorization
+        headers[authentik.TOKEN_HEADER] = authorization
 
         # If we have a valid token, ensure it's included in the headers unless we're regenerating
         if self.token and force is False:
-            headers['Authorization'] += ', Token="{}"'.format(self.token)
+            headers[authentik.TOKEN_HEADER] += ', Token="{}"'.format(self.token)
         else:
             # Check for updated credentials since initialization
             user_details = load_user_details()
             token = user_details.get('token')
             if token:
                 self.token = token
-                headers['Authorization'] += ", Token={}".format(self.token)
+                headers[authentik.TOKEN_HEADER] += ", Token={}".format(self.token)
+        if authentik.BASIC:
+            headers['Authorization'] = authentik.BASIC
 
         # Kodi doesn't support br or zstd compression, exclude them
         headers['Accept-Encoding'] = 'gzip, deflate'

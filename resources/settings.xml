@@ -10,6 +10,10 @@
 		<setting id="server_address" type="text" label="30000" default="" visible="true" enable="true" />
 		<setting id="verify_cert" type="bool" label="30003" default="true" visible="true" enable="true" />
 
+		<setting label="Authentik Gateway" type="lsep"/>
+		<setting id="authentik_username" type="text" label="Authentik Username" default="" visible="true" enable="true" />
+		<setting id="authentik_password" type="text" label="Authentik App Password" default="" visible="true" enable="true" option="hidden" />
+
 		<setting label="30389" type="lsep"/>
 		<setting type="sep" />
 		<setting label="30012" type="action" action="RunScript(plugin.video.jellycon,0,?mode=CHANGE_USER)" option="close"/>

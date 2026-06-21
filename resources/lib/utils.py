@@ -27,6 +27,8 @@ from six.moves.urllib.parse import urlencode
 from .lazylogger import LazyLogger
 from .kodi_utils import HomeWindow
 
+from . import authentik
+
 # hack to get datetime strptime loaded
 throwaway = time.strptime('20110101', '%Y%m%d')
 
@@ -351,7 +353,7 @@ def get_art_url(data, art_type, parent=False, index=0, server=None):
 
     artwork = "{}/Items/{}/Images/{}/{}?Format=original&Tag={}".format(
         server, item_id, art_type, index, image_tag)
-    return artwork
+    return authentik.pipe(artwork)
 
 
 def image_url(item_id, art_type, index, width, height, image_tag, server):
@@ -365,7 +367,7 @@ def image_url(item_id, art_type, index, width, height, image_tag, server):
     if int(height) > 0:
         artwork += '&MaxHeight={}'.format(height)
 
-    return artwork
+    return authentik.pipe(artwork)
 
 
 def get_default_filters():
@@ -427,7 +429,7 @@ def download_external_sub(language, codec, url, title):
     verify_cert = addon_settings.getSetting('verify_cert') == 'true'
 
     # Download the subtitle file
-    r = requests.get(url, verify=verify_cert)
+    r = requests.get(url, headers=authentik.basic_headers(), verify=verify_cert)
     r.raise_for_status()
 
     # Write the subtitle file to the local filesystem

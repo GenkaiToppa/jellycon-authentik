@@ -18,6 +18,8 @@ from .utils import (
     load_user_details, get_current_datetime, get_saved_users
 )
 
+from . import authentik
+
 log = LazyLogger(__name__)
 
 __addon__ = xbmcaddon.Addon()
@@ -443,6 +445,8 @@ def create_user_listitem(server, user):
             user_image = '{}/Users/{}/Images/Primary?Format=original&tag={}'.format(
                 server, user_id, tag
             )
+
+        user_image = authentik.pipe(user_image)
 
         art = {"Thumb": user_image}
         user_item.setArt(art)
