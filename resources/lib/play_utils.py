@@ -74,6 +74,9 @@ def play_all_files(items, play_items=True):
         if playurl is None:
             return
 
+        if playback_type == "2":
+            playurl = authentik.pipe(playurl, transcode=True)
+
         playback_type_string = "DirectPlay"
         if playback_type == "2":
             playback_type_string = "Transcode"
@@ -172,6 +175,9 @@ def add_to_playlist(play_info):
 
     if playurl is None:
         return
+
+    if playback_type == "2":
+        playurl = authentik.pipe(playurl, transcode=True)
 
     playback_type_string = "DirectPlay"
     if playback_type == "2":
@@ -466,6 +472,7 @@ def play_file(play_info):
     if playback_type == "2":  # if transcoding then prompt for audio and subtitle
         playurl = audio_subs_pref(playurl, list_item, selected_media_source, item_id, audio_stream_index,
                                   subtitle_stream_index)
+        playurl = authentik.pipe(playurl, transcode=True)
         log.debug("New playurl for transcoding: {0}".format(playurl))
 
     elif playback_type == "1":  # for direct stream add any streamable subtitles
@@ -898,9 +905,7 @@ def audio_subs_pref(url, list_item, media_source, item_id, audio_stream_index, s
         if select_subs_index in downloadable_streams:
             subtitle_url = "%s/Videos/%s/%s/Subtitles/%s/Stream.srt"
             subtitle_url = subtitle_url % (settings.getSetting('server_address'), item_id, source_id, select_subs_index)
-
             subtitle_url = authentik.pipe(subtitle_url)
-
             log.debug("Streaming subtitles url: {0} {1}".format(select_subs_index, subtitle_url))
             list_item.setSubtitles([subtitle_url])
         else:
@@ -921,9 +926,7 @@ def audio_subs_pref(url, list_item, media_source, item_id, audio_stream_index, s
             if select_subs_index in downloadable_streams:
                 subtitle_url = "%s/Videos/%s/%s/Subtitles/%s/Stream.srt"
                 subtitle_url = subtitle_url % (settings.getSetting('server_address'), item_id, source_id, select_subs_index)
-
                 subtitle_url = authentik.pipe(subtitle_url)
-
                 log.debug("Streaming subtitles url: {0} {1}".format(select_subs_index, subtitle_url))
                 list_item.setSubtitles([subtitle_url])
             else:
@@ -1350,8 +1353,6 @@ def get_play_url(media_source, play_session_id, channel_id=None):
             transcode_path = urlencode(transcode_params)
             playurl = '{}/Videos/{}/master.m3u8?{}'.format(
                 server, item_id, transcode_path)
-
-        playurl = authentik.pipe(playurl, transcode=True)
 
         playback_type = "2"
 
